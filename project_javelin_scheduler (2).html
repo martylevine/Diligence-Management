@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Javelin — Scheduler</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--p:#6C3FA0;--pd:#4A2272;--pl:#8B6BBF;--p50:#F3EEFA;--p100:#E1D4F4;--p200:#C9AEE8;--g:#C9A84C;--gl:#E8D799;--g50:#FDF8EC;--ch:#1E1E2A;--iv:#FAF9F7;--wg:#8E8E9A;--bd:rgba(108,63,160,0.12);--gn:#2D8F5E;--gnb:#E8F5EE;--rd:#C0392B;--rdb:#FDECEA;--bl:#2E6FBA;--blb:#EBF2FB;--r:10px;--rl:14px;}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#f6f5f3;color:var(--ch);font-size:13px;line-height:1.5;min-height:100vh;}
+.screen{display:none;padding:1.5rem;max-width:1140px;margin:0 auto;}
+.screen.active{display:block;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-radius:var(--rl);background:linear-gradient(135deg,#3D1D66 0%,#5C32A0 50%,#7B52BF 100%);margin-bottom:1.5rem;position:relative;overflow:hidden;flex-wrap:wrap;gap:10px;}
+.topbar::before{content:'';position:absolute;top:-60%;right:-15%;width:350px;height:350px;border-radius:50%;background:rgba(201,168,76,0.06);}
+.topbar::after{content:'';position:absolute;bottom:-40%;left:-10%;width:250px;height:250px;border-radius:50%;background:rgba(255,255,255,0.03);}
+.topbar *{position:relative;z-index:1;}
+.topbar h1{font-size:17px;font-weight:600;color:#fff;letter-spacing:-0.01em;}
+.topbar .sub{font-size:11px;color:rgba(255,255,255,0.55);margin-top:2px;}
+.tba{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.btn{font-size:12px;padding:6px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:500;transition:all 0.12s ease;display:inline-flex;align-items:center;gap:5px;}
+.bg{background:rgba(255,255,255,0.12);color:#fff;}
+.bg:hover{background:rgba(255,255,255,0.22);}
+.bp{background:var(--p);color:#fff;}.bp:hover{background:var(--pd);}
+.bo{background:transparent;color:var(--p);border:1px solid var(--bd);}.bo:hover{background:var(--p50);}
+.bgl{background:linear-gradient(135deg,var(--g),#D4B65E);color:#2A1E00;font-weight:600;}.bgl:hover{opacity:0.9;}
+.bs{font-size:11px;padding:4px 10px;}
+.bd{background:transparent;color:var(--rd);border:1px solid rgba(192,57,43,0.2);}.bd:hover{background:var(--rdb);}
+.sp{display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,255,255,0.6);background:rgba(255,255,255,0.08);padding:4px 10px;border-radius:20px;}
+.sp svg{width:12px;height:12px;}
+.sr{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:1.5rem;}
+.sc{background:#fff;border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;}
+.sc::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--p),var(--pl));}
+.sc .sl{font-size:11px;color:var(--wg);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;}
+.sc .sv{font-size:22px;font-weight:600;color:var(--ch);letter-spacing:-0.02em;}
+.sc .ss{font-size:11px;color:var(--wg);margin-top:2px;}
+.scc{transition:all 0.12s ease;}.scc:hover{border-color:var(--pl);transform:translateY(-1px);}
+.team-chip{display:inline-flex;align-items:center;gap:5px;background:var(--p50);color:var(--pd);font-size:11px;font-weight:500;padding:3px 8px 3px 4px;border-radius:16px;margin:2px 2px;}
+.team-chip .tc-avatar{width:18px;height:18px;border-radius:50%;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;flex-shrink:0;}
+.team-chip .tc-remove{cursor:pointer;color:var(--wg);font-size:12px;margin-left:2px;border:none;background:none;padding:0;line-height:1;}.team-chip .tc-remove:hover{color:var(--rd);}
+.team-chip.tc-system{background:var(--iv);color:var(--wg);}
+.team-chip.tc-system .tc-avatar{background:var(--wg);}
+.team-section{background:#fff;border:1px solid var(--bd);border-radius:var(--rl);padding:18px;margin-bottom:1.5rem;}
+.team-section h3{font-size:14px;font-weight:600;margin-bottom:12px;}
+.team-call-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid rgba(108,63,160,0.06);}
+.team-call-row:last-child{border-bottom:none;}
+.team-call-label{font-size:12px;font-weight:600;color:var(--ch);min-width:110px;padding-top:4px;}
+.team-call-chips{display:flex;flex-wrap:wrap;align-items:center;gap:0;flex:1;}
+.add-person-btn{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--p);cursor:pointer;border:1px dashed var(--bd);border-radius:16px;padding:3px 10px;background:transparent;margin:2px;}.add-person-btn:hover{background:var(--p50);border-color:var(--pl);}
+.add-person-inline{display:inline-flex;align-items:center;gap:4px;margin:2px;}
+.add-person-inline input{font-size:11px;padding:3px 8px;border:1px solid var(--bd);border-radius:6px;outline:none;width:120px;}.add-person-inline input:focus{border-color:var(--p);}
+.add-person-inline select{font-size:11px;padding:3px 6px;border:1px solid var(--bd);border-radius:6px;outline:none;background:#fff;}
+.cd{background:#fff;border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;}
+.ch2{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.ch2 h3{font-size:14px;font-weight:600;color:var(--ch);}
+table.jt{width:100%;border-collapse:collapse;table-layout:fixed;}
+table.jt th{font-size:11px;font-weight:600;color:var(--wg);text-transform:uppercase;letter-spacing:0.04em;padding:10px 6px;text-align:center;background:var(--iv);border-bottom:1px solid var(--bd);}
+table.jt th:first-child{text-align:left;padding-left:12px;width:18%;}
+table.jt th:nth-child(2),table.jt th:nth-child(3),table.jt th:nth-child(4),table.jt th:nth-child(5){width:14%;}
+table.jt th:nth-child(6){width:6%;}
+table.jt th:nth-child(7){width:9%;}
+table.jt th:nth-child(8){width:8%;}
+table.jt th:last-child{width:6%;}
+table.jt td{padding:8px 6px;border-bottom:1px solid rgba(108,63,160,0.06);font-size:13px;vertical-align:middle;text-align:center;overflow:hidden;}
+table.jt td:first-child{text-align:left;padding-left:12px;}
+table.jt tr:hover td{background:var(--p50);}
+table.jt tr:last-child td{border-bottom:none;}
+.pl{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500;white-space:nowrap;justify-content:center;}
+.pp{background:#FFF4E0;color:#9A6C00;}
+.pc{background:var(--gnb);color:var(--gn);font-size:10px;white-space:nowrap;border-radius:6px;padding:3px 6px;display:inline-block;text-align:center;line-height:1.4;}
+.pk{background:var(--rdb);color:var(--rd);}
+.pa{background:var(--blb);color:var(--bl);cursor:pointer;}
+.pt{height:5px;background:var(--p50);border-radius:3px;overflow:hidden;width:80px;}
+.pf{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--p),var(--pl));transition:width 0.3s ease;}
+.it{display:flex;align-items:center;gap:10px;}
+.il{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(0,0,0,0.06);overflow:hidden;background:#fff;}
+.il svg{width:100%;height:100%;}
+.ik{font-size:11px;color:var(--p);opacity:0.7;cursor:pointer;text-decoration:none;}.ik:hover{opacity:1;text-decoration:underline;}
+.bb{font-size:12px;color:var(--wg);cursor:pointer;border:none;background:none;padding:0;margin-bottom:1rem;display:flex;align-items:center;gap:5px;}.bb:hover{color:var(--p);}
+.w2w{overflow-x:auto;}
+.w2t{border-collapse:collapse;min-width:600px;width:100%;}
+.w2t th{font-size:11px;font-weight:600;color:var(--ch);padding:8px 4px;text-align:center;background:var(--iv);position:sticky;top:0;z-index:2;}
+.w2t th.tc{width:70px;text-align:right;padding-right:10px;color:var(--wg);font-weight:500;}
+.w2t td.tl{font-size:11px;color:var(--wg);text-align:right;padding:0 10px 0 0;width:70px;border:none;user-select:none;}
+.w2t td.st{width:auto;height:28px;border:1px solid rgba(108,63,160,0.08);cursor:pointer;transition:background 0.1s;position:relative;user-select:none;}
+.w2t td.st:hover{outline:2px solid var(--pl);outline-offset:-2px;z-index:1;}
+.w2t td.st.ac{background:#D8C6F0;}
+.w2t td.st.ai{background:var(--gl);}
+.w2t td.st.ab{background:var(--p);}
+.w2t td.st.am{background:linear-gradient(135deg,#D8C6F0,var(--gl));}
+.w2t td.st.bk{background:var(--iv);cursor:default;opacity:0.5;}
+.w2t td.st.bk::after{content:'';position:absolute;top:50%;left:8%;right:8%;height:1px;background:var(--wg);}
+.w2t td.st .slot-dots{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);display:flex;gap:2px;}
+.w2t td.st .slot-dot{width:5px;height:5px;border-radius:50%;}
+.lg{display:flex;gap:16px;align-items:center;padding:10px 0;font-size:11px;color:var(--wg);flex-wrap:wrap;}
+.lg span{display:flex;align-items:center;gap:5px;}
+.lg .sw{width:14px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,0.08);}
+.pg{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:480px;text-align:center;}
+.pg .sh{width:64px;height:64px;border-radius:50%;background:var(--p50);display:flex;align-items:center;justify-content:center;margin-bottom:20px;}
+.pg .sh svg{width:32px;height:32px;color:var(--p);}
+.pg h2{font-size:20px;font-weight:600;color:var(--ch);margin-bottom:6px;}
+.pg p{font-size:13px;color:var(--wg);margin-bottom:24px;}
+.pi{display:flex;gap:8px;margin-bottom:16px;justify-content:center;}
+.pi input{width:44px;height:52px;text-align:center;font-size:20px;font-weight:600;border:1.5px solid var(--bd);border-radius:10px;outline:none;color:var(--ch);background:#fff;transition:border-color 0.15s;}
+.pi input:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(108,63,160,0.1);}
+.pe{font-size:12px;color:var(--rd);margin-bottom:12px;display:none;}
+.ib{max-width:680px;margin:0 auto;}
+.ibh{text-align:center;padding:32px 0;border-bottom:1px solid var(--bd);margin-bottom:24px;}
+.ibh .ibl{display:inline-flex;align-items:center;gap:10px;background:var(--p50);color:var(--p);font-size:14px;font-weight:600;padding:10px 20px;border-radius:28px;margin-bottom:16px;}
+.ibh .ibl .il{width:28px;height:28px;border-radius:6px;}
+.ibh h2{font-size:22px;font-weight:600;color:var(--ch);margin-bottom:6px;}
+.ibh p{font-size:14px;color:var(--wg);}
+.cc{display:grid;gap:14px;}
+.cci{border:1px solid var(--bd);border-radius:var(--r);padding:18px;transition:all 0.15s;}
+.cci:hover{border-color:var(--pl);}
+.cci.bcd{background:var(--p50);border-color:var(--p200);}
+.cci h4{font-size:15px;font-weight:600;color:var(--ch);margin-bottom:3px;}
+.cci p{font-size:12px;color:var(--wg);}
+.uz{border:2px dashed var(--bd);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--iv);}
+.uz:hover{border-color:var(--pl);background:var(--p50);}
+.uz p{font-size:13px;color:var(--wg);}
+.ai2{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--iv);border-radius:8px;margin-bottom:6px;border:1px solid var(--bd);}
+.ai2 .aicon{width:28px;height:28px;border-radius:6px;background:var(--blb);display:flex;align-items:center;justify-content:center;}
+.ai2 .aicon svg{width:14px;height:14px;color:var(--bl);}
+.ai2 .ainf{flex:1;}
+.ai2 .ainf .an{font-size:12px;font-weight:600;color:var(--ch);}
+.ai2 .ainf .am{font-size:11px;color:var(--wg);}
+.ai2 .fr{background:none;border:none;cursor:pointer;color:var(--wg);font-size:16px;padding:4px;}
+.tst{position:fixed;bottom:24px;right:24px;background:var(--ch);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;display:none;z-index:200;box-shadow:0 4px 12px rgba(0,0,0,0.15);}
+.np{background:#fff;border:1px solid var(--bd);border-radius:var(--rl);width:380px;position:absolute;right:0;top:calc(100% + 8px);z-index:50;display:none;max-height:360px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.1);}
+.np.show{display:block;}
+.ni{padding:14px 18px;border-bottom:1px solid rgba(108,63,160,0.06);display:flex;gap:10px;align-items:flex-start;}
+.ni:last-child{border-bottom:none;}
+.nd2{width:8px;height:8px;border-radius:50%;background:var(--p);flex-shrink:0;margin-top:5px;}
+.nt{font-size:12px;color:var(--ch);line-height:1.4;}
+.ntm{font-size:11px;color:var(--wg);margin-top:2px;}
+.ep{background:var(--iv);border:1px solid var(--bd);border-radius:var(--r);padding:24px;font-size:13px;line-height:1.8;white-space:pre-wrap;max-height:360px;overflow-y:auto;}
+.tz{font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:8px;background:#fff;color:var(--ch);outline:none;}
+.tz:focus{border-color:var(--p);}
+.nb{position:relative;}
+.nb::after{content:attr(data-count);position:absolute;top:-6px;right:-8px;background:var(--g);color:#2A1E00;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.fg{margin-bottom:14px;}
+.fg label{display:block;font-size:12px;font-weight:600;color:var(--wg);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;}
+.fg select,.fg input,.fg textarea{width:100%;padding:8px 12px;border:1px solid var(--bd);border-radius:8px;font-size:13px;color:var(--ch);outline:none;background:#fff;font-family:inherit;}
+.fg select:focus,.fg input:focus,.fg textarea:focus{border-color:var(--p);}
+.view-as-bar{display:flex;align-items:center;gap:12px;background:var(--g50);border:1px solid rgba(201,168,76,0.2);border-radius:var(--r);padding:12px 18px;margin-bottom:1.5rem;}
+.view-as-bar .vl{font-size:12px;font-weight:600;color:#7A5C00;white-space:nowrap;}
+.view-as-bar select{flex:1;max-width:300px;}
+.view-as-bar .btn{white-space:nowrap;}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.5rem;}
+.dash-card{background:#fff;border:1px solid var(--bd);border-radius:var(--rl);padding:20px 22px;cursor:pointer;transition:all 0.12s;}
+.dash-card:hover{border-color:var(--pl);transform:translateY(-1px);}
+.dash-card .dc-title{font-size:11px;font-weight:600;color:var(--wg);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;}
+.dash-card .dc-desc{font-size:13px;color:var(--ch);line-height:1.5;}
+.dash-card .dc-arrow{font-size:18px;color:var(--pl);margin-top:10px;}
+@media(max-width:768px){.sr{grid-template-columns:1fr 1fr;}.dash-grid{grid-template-columns:1fr;}.topbar{padding:12px 16px;}.view-as-bar{flex-wrap:wrap;}}
+.ai-panel{background:#fff;border:1px solid var(--bd);border-radius:var(--rl);margin-bottom:1.5rem;overflow:hidden;}
+.ai-panel-header{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,var(--p50),#fff);}
+.ai-panel-header h3{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.ai-panel-header .ai-sparkle{width:20px;height:20px;background:linear-gradient(135deg,var(--p),var(--pl));border-radius:6px;display:flex;align-items:center;justify-content:center;}
+.ai-panel-header .ai-sparkle svg{width:12px;height:12px;}
+.ai-panel-body{padding:18px;}
+.ai-item{display:flex;gap:12px;padding:12px 14px;border:1px solid var(--bd);border-radius:var(--r);margin-bottom:8px;transition:all 0.12s;align-items:flex-start;}
+.ai-item:last-child{margin-bottom:0;}
+.ai-item:hover{border-color:var(--pl);background:var(--p50);}
+.ai-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
+.ai-icon.urgent{background:var(--rdb);color:var(--rd);}
+.ai-icon.warn{background:#FFF4E0;color:#9A6C00;}
+.ai-icon.info{background:var(--blb);color:var(--bl);}
+.ai-icon.good{background:var(--gnb);color:var(--gn);}
+.ai-item-content{flex:1;}
+.ai-item-content .ai-title{font-size:13px;font-weight:600;color:var(--ch);margin-bottom:2px;}
+.ai-item-content .ai-desc{font-size:12px;color:var(--wg);line-height:1.4;}
+.ai-item-action{flex-shrink:0;align-self:center;}
+.ai-loading{text-align:center;padding:24px;color:var(--wg);font-size:13px;}
+.ai-loading .ai-dots{display:inline-flex;gap:4px;margin-left:8px;}.ai-loading .ai-dots span{width:6px;height:6px;border-radius:50%;background:var(--pl);animation:aiPulse 1.2s infinite;}
+.ai-loading .ai-dots span:nth-child(2){animation-delay:0.2s;}.ai-loading .ai-dots span:nth-child(3){animation-delay:0.4s;}
+@keyframes aiPulse{0%,100%{opacity:0.3;}50%{opacity:1;}}
+</style>
+</head>
+<body>
+
+<div id="tst" class="tst"></div>
+
+<div id="s-dash" class="screen active">
+<div class="topbar">
+<div>
+<div style="display:flex;align-items:center;gap:10px;">
+<div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" width="20" height="20"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+<div><h1>Project Javelin</h1><div class="sub">GP stakes · Evercore · Mar 31 – Apr 4</div></div>
+</div>
+</div>
+<div class="tba">
+<div class="sp"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M7 1L2 3.5v4c0 2.8 2.1 5.1 5 5.5 2.9-.4 5-2.7 5-5.5v-4L7 1z" stroke-linejoin="round"/><path d="M4.5 7l2 2 3-3" stroke-linecap="round" stroke-linejoin="round"/></svg>PIN-secured</div>
+<button class="btn bg" onclick="show('s-avail')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.3"><rect x="2" y="2" width="12" height="12" rx="2"/><line x1="2" y1="6" x2="14" y2="6"/><line x1="6" y1="2" x2="6" y2="14"/><line x1="10" y1="2" x2="10" y2="14"/><line x1="2" y1="10" x2="14" y2="10"/></svg> Availability</button>
+<button class="btn bg" onclick="show('s-email')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.3"><path d="M2 4l6 4 6-4"/><rect x="1" y="3" width="14" height="10" rx="1.5"/></svg> Email</button>
+<div style="position:relative;"><button class="btn bg nb" data-count="0" id="nb" onclick="toggleN()"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.3"><path d="M4 5.5a4 4 0 018 0c0 4 2 5 2 5H2s2-1 2-5z"/><path d="M5.5 13a2.5 2.5 0 005 0"/></svg></button>
+<div class="np" id="np"><div style="padding:14px 18px;border-bottom:1px solid var(--bd);font-size:14px;font-weight:600;">Notifications</div><div id="nl"><div style="padding:24px;text-align:center;font-size:12px;color:var(--wg);">No Notifications Yet</div></div></div></div>
+</div>
+</div>
+
+<div class="view-as-bar">
+<span class="vl"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#7A5C00" stroke-width="1.3" style="vertical-align:-2px;margin-right:4px;"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>View as investor:</span>
+<select class="tz" id="va-sel" style="flex:1;max-width:300px;padding:7px 12px;"></select>
+<button class="btn bp bs" onclick="viewAs()">Open investor view</button>
+</div>
+
+<div class="sr">
+<div class="sc"><div class="sl">Total Investors</div><div class="sv">9</div><div class="ss">All GP Stakes</div></div>
+<div class="sc"><div class="sl">Calls Booked</div><div class="sv" id="d-bk">0</div><div class="ss">of 36 Total</div></div>
+<div class="sc"><div class="sl">Agendas Received</div><div class="sv" id="d-ag">0</div><div class="ss" id="d-ags">Awaiting Uploads</div></div>
+<div class="sc"><div class="sl">Completion</div><div class="sv" id="d-pc">0%</div><div class="ss">Target: 100%</div></div>
+</div>
+
+<div class="sr" id="call-summary-row">
+<div class="sc scc" onclick="showCallSummary('Model Review')" style="cursor:pointer;">
+<div class="sl">Model Review</div>
+<div class="sv" id="cs-ModelReview">0 / 9</div>
+<div class="ss" id="csd-ModelReview">Evercore-Led</div>
+</div>
+<div class="sc scc" onclick="showCallSummary('Asset Review')" style="cursor:pointer;">
+<div class="sl">Asset Review</div>
+<div class="sv" id="cs-AssetReview">0 / 9</div>
+<div class="ss" id="csd-AssetReview">Gene Yoon</div>
+</div>
+<div class="sc scc" onclick="showCallSummary('LP Base')" style="cursor:pointer;">
+<div class="sl">LP Base</div>
+<div class="sv" id="cs-LPBase">0 / 9</div>
+<div class="ss" id="csd-LPBase">Shea Goggin</div>
+</div>
+<div class="sc scc" onclick="showCallSummary('Value Add')" style="cursor:pointer;">
+<div class="sl">Value Add <span style="font-size:9px;color:var(--wg);text-transform:none;letter-spacing:0;">(Optional)</span></div>
+<div class="sv" id="cs-ValueAdd">0 / 9</div>
+<div class="ss" id="csd-ValueAdd">Gene Yoon</div>
+</div>
+</div>
+
+<div class="team-section" id="team-section">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+<div><h3 style="margin-bottom:2px;">Javelin Team</h3><div style="font-size:12px;color:var(--wg);">Assign Team Members to Each Call Type</div></div>
+<div style="position:relative;"><button class="btn bo bs" onclick="toggleTeamPanel()">Team Members</button>
+<div id="team-panel" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--bd);border-radius:10px;width:320px;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.1);">
+<div style="padding:12px 14px;border-bottom:1px solid var(--bd);font-size:13px;font-weight:600;">Team Members</div>
+<div id="team-panel-list" style="max-height:240px;overflow-y:auto;"></div>
+<div style="padding:10px 14px;border-top:1px solid var(--bd);">
+<div id="team-add-inline" style="display:none;margin-bottom:8px;">
+<div style="display:flex;flex-direction:column;gap:6px;">
+<input type="text" id="atm-name" placeholder="Full Name" class="tz" style="padding:6px 10px;font-size:12px;">
+<input type="text" id="atm-title" placeholder="Title" class="tz" style="padding:6px 10px;font-size:12px;">
+<input type="email" id="atm-email" placeholder="Email" class="tz" style="padding:6px 10px;font-size:12px;">
+<div style="display:flex;gap:6px;">
+<button class="btn bp bs" style="flex:1;justify-content:center;" onclick="addTeamMember()">Add</button>
+<button class="btn bo bs" style="flex:1;justify-content:center;" onclick="document.getElementById('team-add-inline').style.display='none';">Cancel</button>
+</div>
+</div>
+</div>
+<button class="btn bo bs" style="width:100%;justify-content:center;" onclick="document.getElementById('team-add-inline').style.display='block';document.getElementById('atm-name').focus();">+ Add New Member</button>
+</div>
+</div>
+</div>
+</div>
+<div id="team-assign-rows"></div>
+</div>
+
+<div class="ai-panel" id="ai-panel">
+<div class="ai-panel-header">
+<h3><span class="ai-sparkle"><svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5"><path d="M8 1v3M8 12v3M1 8h3M12 8h3M3.5 3.5l2 2M10.5 10.5l2 2M3.5 12.5l2-2M10.5 5.5l2-2"/></svg></span> AI Next Steps</h3>
+<div style="display:flex;gap:6px;">
+<button class="btn bo bs" onclick="generateAINextSteps()"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="vertical-align:-1px;margin-right:3px;"><path d="M1 12l4-8 4 6 3-4 3 6"/></svg>Refresh</button>
+<button class="btn bo bs" onclick="copyAINextSteps()">Copy</button>
+</div>
+</div>
+<div class="ai-panel-body" id="ai-body"></div>
+</div>
+
+<div class="dash-grid">
+<div class="dash-card" onclick="show('s-avail')">
+<div class="dc-title">Javelin Availability</div>
+<div class="dc-desc">Set Availability for Each Javelin Team Member. 9 AM – 7 PM EST, Five Days.</div>
+<div class="dc-arrow">&rarr;</div>
+</div>
+<div class="dash-card" onclick="show('s-email')">
+<div class="dc-title">Outreach Email</div>
+<div class="dc-desc">Generate Investor-Specific Emails with Secure Scheduling Links, PINs, and Agenda Upload Instructions.</div>
+<div class="dc-arrow">&rarr;</div>
+</div>
+</div>
+
+<div class="cd">
+<div class="ch2"><h3>Investor Pipeline</h3><div style="display:flex;gap:6px;"><button class="btn bo bs" onclick="show('s-avail')">Open grid</button><button class="btn bp bs" onclick="loadDemo()">Load demo data</button></div></div>
+<div style="overflow-x:auto;">
+<table class="jt">
+<thead><tr><th style="min-width:170px;">Investor</th><th>Model Review</th><th>Asset Review</th><th>LP Base</th><th>Value Add</th><th>Agenda</th><th>Progress</th><th>PIN</th><th></th></tr></thead>
+<tbody id="tb1"></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<div id="s-avail" class="screen">
+<button class="bb" onclick="show('s-dash')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Dashboard</button>
+<div class="topbar" style="margin-bottom:1rem;">
+<div><h1>Javelin Availability</h1><div class="sub">Drag to Select · When2Meet-Style Grid</div></div>
+<div class="tba">
+<select id="pm" class="tz" style="color:var(--ch);background:#fff;border-color:rgba(255,255,255,0.15);min-width:200px;padding:6px 10px;">
+<option value="Gene Yoon">Gene Yoon</option>
+<option value="Shea Goggin">Shea Goggin</option>
+<option value="Blair Greenberg">Blair Greenberg</option>
+<option value="Pavan Tripathi">Pavan Tripathi</option>
+</select>
+<button class="btn bg" onclick="clearSlots()">Clear</button>
+<button class="btn bg" onclick="doUndo()" title="Undo (Ctrl+Z)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.3"><path d="M3 7h7a3 3 0 010 6H8"/><path d="M6 4L3 7l3 3"/></svg> Undo</button>
+<button class="btn bgl bs" onclick="loadSlots()">Load Sample</button>
+</div>
+</div>
+<div class="lg" id="avail-legend"></div>
+<div class="cd" style="margin-top:8px;"><div style="padding:10px;"><div class="w2w"><table class="w2t" id="w2"></table></div></div></div>
+</div>
+
+<div id="s-pin" class="screen">
+<div class="pg">
+<div class="sh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16" r="1"/></svg></div>
+<h2 id="pt2">Secure Access</h2>
+<p id="ps2">Enter Your 6-Digit PIN</p>
+<div class="pi" id="pis"></div>
+<div class="pe" id="per"></div>
+<button class="btn bp" style="padding:8px 24px;font-size:14px;" id="psb" onclick="submitP()">Continue</button>
+<div style="margin-top:20px;font-size:11px;color:var(--wg);">Confidential · Project Javelin · Evercore</div>
+</div>
+</div>
+
+<div id="s-book" class="screen">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+<button class="bb" style="margin-bottom:0;" onclick="show('s-dash')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Dashboard</button>
+<button class="btn bo bs" onclick="doUndo()" title="Undo (Ctrl+Z)"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="vertical-align:-1px;margin-right:3px;"><path d="M3 7h7a3 3 0 010 6H8"/><path d="M6 4L3 7l3 3"/></svg>Undo</button>
+</div>
+<div class="ib">
+<div class="ibh">
+<div class="ibl" id="bbg"></div>
+<h2>Project Javelin — Follow-Up Calls</h2>
+<p>Select a Call Type to Book Your Preferred Time.</p>
+<div style="margin-top:12px;display:flex;justify-content:center;gap:8px;align-items:center;">
+<span style="font-size:12px;color:var(--wg);">Time zone:</span>
+<select class="tz" id="btz" onchange="renderBk()">
+<option value="0">ET (New York)</option><option value="-1">CT (Chicago)</option><option value="-2">MT (Denver)</option><option value="-3">PT (San Francisco)</option><option value="5">GMT (London)</option><option value="6">CET (Paris)</option>
+</select>
+</div>
+</div>
+<div class="cc" id="bcl"></div>
+<input type="file" id="fi" style="display:none;" accept=".pdf,.docx,.pptx,.xlsx,.doc,.ppt,.xls" multiple onchange="handleUp(event)">
+</div>
+</div>
+
+<div id="s-email" class="screen">
+<button class="bb" onclick="show('s-dash')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Dashboard</button>
+<div class="topbar" style="margin-bottom:1rem;"><div><h1>Outreach Email</h1><div class="sub">Draft Investor-Specific Scheduling Emails</div></div></div>
+<div class="cd" style="margin-bottom:14px;"><div style="padding:18px;"><div class="fg"><label>Investor</label><select id="ei" class="tz" style="width:100%;padding:8px 12px;" onchange="genEmail()"></select></div></div></div>
+<div class="cd">
+<div class="ch2"><h3>Email Preview</h3><div style="display:flex;gap:6px;"><button class="btn bo bs" onclick="copyEm()">Copy</button><button class="btn bp bs" onclick="openOL()"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.3"><path d="M2 4l6 4 6-4"/><rect x="1" y="3" width="14" height="10" rx="1.5"/></svg> Outlook</button></div></div>
+<div style="padding:18px;">
+<div style="font-size:12px;color:var(--wg);margin-bottom:4px;">Subject:</div>
+<div id="esj" style="font-size:15px;font-weight:600;margin-bottom:14px;"></div>
+<div class="ep" id="ebd"></div>
+</div>
+</div>
+</div>
+
+<div id="s-agv" class="screen">
+<button class="bb" onclick="show('s-dash')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Dashboard</button>
+<div class="topbar" style="margin-bottom:1rem;"><div><h1 id="avt">Agendas</h1><div class="sub">Uploaded Materials</div></div></div>
+<div id="avl"></div>
+</div>
+
+<div id="s-callsum" class="screen">
+<button class="bb" onclick="show('s-dash')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Dashboard</button>
+<div class="topbar" style="margin-bottom:1rem;">
+<div><h1 id="cs-title">Call Summary</h1><div class="sub" id="cs-sub">All Investors</div></div>
+<div class="tba">
+<button class="btn bg" onclick="copyCallSummary()"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.3" style="vertical-align:-1px;margin-right:3px;"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg> Copy Summary</button>
+</div>
+</div>
+<div class="sr" style="grid-template-columns:repeat(3,minmax(0,1fr));">
+<div class="sc"><div class="sl">Booked</div><div class="sv" id="css-booked">0</div><div class="ss">of 9 Investors</div></div>
+<div class="sc"><div class="sl">Pending</div><div class="sv" id="css-pending">9</div><div class="ss">Not Yet Scheduled</div></div>
+<div class="sc"><div class="sl">Agendas</div><div class="sv" id="css-agendas">0</div><div class="ss">Files Uploaded</div></div>
+</div>
+<div class="cd" style="margin-bottom:14px;">
+<div class="ch2"><h3>Scheduled</h3></div>
+<div id="cs-booked-list" style="padding:4px 0;"></div>
+</div>
+<div class="cd">
+<div class="ch2"><h3>Pending</h3></div>
+<div id="cs-pending-list" style="padding:4px 0;"></div>
+</div>
+</div>
+
+<script>
+var LG={
+amg:'<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><rect width="36" height="36" rx="4" fill="#003057"/><text x="18" y="21" text-anchor="middle" font-family="Georgia,serif" font-size="10" font-weight="bold" fill="#fff" letter-spacing="1">AMG</text></svg>',
+blackstone:'<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><rect width="36" height="36" rx="4" fill="#000"/><text x="18" y="15" text-anchor="middle" font-family="Georgia,serif" font-size="6.5" font-weight="bold" fill="#fff" letter-spacing="0.5">BLACK</text><text x="18" y="23" text-anchor="middle" font-family="Georgia,serif" font-size="6.5" font-weight="bold" fill="#fff" letter-spacing="0.5">STONE</text></svg>',
+blueowl:'<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><rect width="36" height="36" rx="4" fill="#0C2340"/><text x="18" y="14" text-anchor="middle" font-family="system-ui" font-size="6" font-weight="600" fill="#4DA3E8" letter-spacing="0.3">BLUE</text><text x="18" y="23" text-anchor="middle" font-family="system-ui" font-size="7" font-weight="700" fill="#fff" letter-spacing="0.5">OWL</text></svg>',
+bonaccord:'<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><rect width="36" height="36" rx="4" fill="#1B365D"/><text x="18" y="15" text-anchor="middle" font-family="Georgia,serif" font-size="5.2" font-weight="bold" fill="#C5A55A" letter-spacing="0.8">BON</text><text x="18" y="23" text-anchor="middle" font-family="Georgia,serif" font-size="5.2" font-weight="bold" fill="#C5A55A" letter-spacing="0.5">ACCORD</text></svg>',
+hunterpoint:'<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><rect width="36" height="36" rx="4" fill="#1A3C34"/><text x="18" y="14" text-anchor="middle" font-family="system-ui" font-size="5" font-weight="600" fill="#8FBF9F" letter-spacing="0.5">HUNTER</text><text x="18" y="23" text-anchor="middle" font-family="system-ui" font-size="5" font-weight="700" fill="#fff" letter-spacing="0.5">POINT</text></svg>',
+pact:'<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><rect width="36" height="36" rx="4" fill="#2D1A4E"/><text x="18" y="21" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#fff" letter-spacing="1.5">PACT</text></svg>',
+petershill:'<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><rect width="36" height="36" rx="4" fill="#003A70"/><text x="18" y="14" text-anchor="middle" font-family="Georgia,serif" font-size="5" font-weight="bold" fill="#B4975A" letter-spacing="0.3">PETERS</text><text x="18" y="23" text-anchor="middle" font-family="Georgia,serif" font-size="5" font-weight="bold" fill="#B4975A" letter-spacing="0.3">HILL</text></svg>',
+ridgelake:'<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><rect width="36" height="36" rx="4" fill="#0D3B2E"/><text x="18" y="14" text-anchor="middle" font-family="system-ui" font-size="5.2" font-weight="600" fill="#7DC4A5" letter-spacing="0.3">RIDGE</text><text x="18" y="23" text-anchor="middle" font-family="system-ui" font-size="5.2" font-weight="700" fill="#fff" letter-spacing="0.3">LAKE</text></svg>',
+wafra:'<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><rect width="36" height="36" rx="4" fill="#1C1C1C"/><text x="18" y="14" text-anchor="middle" font-family="Georgia,serif" font-size="5" fill="#C9A84C" letter-spacing="0.5">W A F R A</text><line x1="8" y1="18" x2="28" y2="18" stroke="#C9A84C" stroke-width="0.5"/><text x="18" y="25" text-anchor="middle" font-family="system-ui" font-size="3.8" fill="#888" letter-spacing="0.5">INVESTMENTS</text></svg>'
+};
+var INV=[
+{id:'amg',n:'AMG',f:'Affiliated Managers Group'},
+{id:'blackstone',n:'Blackstone',f:'Blackstone Strategic Capital'},
+{id:'blueowl',n:'Blue Owl',f:'Blue Owl Capital'},
+{id:'bonaccord',n:'Bonaccord',f:'Bonaccord Capital Partners'},
+{id:'hunterpoint',n:'Hunterpoint',f:'Hunterpoint Capital'},
+{id:'pact',n:'PACT',f:'PACT Capital'},
+{id:'petershill',n:'Petershill',f:'Petershill Partners (Goldman Sachs)'},
+{id:'ridgelake',n:'RidgeLake',f:'RidgeLake Partners'},
+{id:'wafra',n:'Wafra',f:'Wafra Inc.'}
+];
+var CLS=['Model Review','Asset Review','LP Base','Value Add'];
+var OPTIONAL_CALLS={'Value Add':true};
+var customCalls={};
+INV.forEach(function(v){customCalls[v.id]=[];});
+var DYS=['Mon 3/31','Tue 4/1','Wed 4/2','Thu 4/3','Fri 4/4'];
+var HRS=[];for(var h=9;h<=18;h++){HRS.push(h+':00');if(h<18)HRS.push(h+':30');}
+
+var CLIENT={
+  firm:'Javelin',
+  project:'Project Javelin',
+  team:[
+    {name:'Gene Yoon',title:'Managing Partner',email:'gyoon@javelin.com',role:'lead'},
+    {name:'Shea Goggin',title:'Head of Capital Formation',email:'sgoggin@javelin.com',role:'member'},
+    {name:'Blair Greenberg',title:'Partner',email:'bgreenberg@javelin.com',role:'member'},
+    {name:'Pavan Tripathi',title:'Principal',email:'ptripathi@javelin.com',role:'member'}
+  ]
+};
+
+var callAssign={
+  'Model Review':[{name:'Evercore Team',title:'Advisor',email:'',system:true}],
+  'Asset Review':[{name:'Gene Yoon',title:'Managing Partner',email:'gyoon@javelin.com'}],
+  'LP Base':[{name:'Shea Goggin',title:'Head of Capital Formation',email:'sgoggin@javelin.com'}],
+  'Value Add':[{name:'Gene Yoon',title:'Managing Partner',email:'gyoon@javelin.com'}]
+};
+var sl={},bk={},pn={},ag={},nf=[],la={},ci=null,dr=false,dm=null,uploadTarget=null;
+var undoStack=[];
+var MAX_UNDO=50;
+function pushUndo(action){undoStack.push(action);if(undoStack.length>MAX_UNDO)undoStack.shift();}
+function doUndo(){
+  if(undoStack.length===0){toast('Nothing To Undo');return;}
+  var action=undoStack.pop();
+  if(action.type==='slot'){
+    if(action.prev)sl[action.key]={t:action.prev};else delete sl[action.key];
+    rG();toast('Slot Undone');
+  }else if(action.type==='book'){
+    delete bk[action.key];
+    if(action.slotKey&&sl[action.slotKey]){delete sl[action.slotKey].by;}
+    renderBk();rD();toast('Booking Undone');
+  }else if(action.type==='slotBatch'){
+    action.changes.forEach(function(ch){
+      if(ch.prev)sl[ch.key]={people:ch.prev};else delete sl[ch.key];
+    });
+    rG();toast('Undone '+action.changes.length+' Slots');
+  }
+}
+document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();doUndo();}});
+INV.forEach(function(v){pn[v.id]=String(100000+Math.floor(Math.random()*900000));ag[v.id]={};CLS.forEach(function(c){ag[v.id][c]=[];});});
+
+function lh(id,sz){sz=sz||36;return '<div class="il" style="width:'+sz+'px;height:'+sz+'px;">'+LG[id]+'</div>';}
+function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});document.getElementById(id).classList.add('active');if(id==='s-dash')rD();if(id==='s-avail'){buildLegend();rG();}if(id==='s-email')sE();}
+function toast(m){var t=document.getElementById('tst');t.textContent=m;t.style.display='block';setTimeout(function(){t.style.display='none';},2200);}
+function toggleN(){document.getElementById('np').classList.toggle('show');}
+function addN(t){nf.unshift({t:t,tm:new Date()});document.getElementById('nb').setAttribute('data-count',nf.length);document.getElementById('nl').innerHTML=nf.map(function(n){return '<div class="ni"><div class="nd2"></div><div><div class="nt">'+n.t+'</div><div class="ntm">'+n.tm.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</div></div></div>';}).join('');}
+function gBC(){return Object.values(bk).filter(Boolean).length;}
+function gAC(){var tot=0;INV.forEach(function(v){CLS.forEach(function(c){if(ag[v.id][c])tot+=ag[v.id][c].length;});customCalls[v.id].forEach(function(cc){if(ag[v.id][cc.name])tot+=ag[v.id][cc.name].length;});});return tot;}
+function getInvCalls(invId){return CLS.concat(customCalls[invId].map(function(cc){return cc.name;}));}
+
+function popVA(){
+  var sel=document.getElementById('va-sel');
+  sel.innerHTML='<option value="">— Select an investor —</option>'+INV.map(function(v){return '<option value="'+v.id+'">'+v.n+' — '+v.f+'</option>';}).join('');
+}
+function viewAs(){var id=document.getElementById('va-sel').value;if(!id){toast('Select an investor first');return;}ci=id;showBk(id);}
+
+function iRow(v){
+  var requiredCalls=CLS.filter(function(c){return !OPTIONAL_CALLS[c];});
+  var bc=requiredCalls.filter(function(c){return bk[v.id+'_'+c];}).length;
+  var total=requiredCalls.length;
+  var pc=Math.round(bc/total*100);
+  var ha=0;CLS.forEach(function(c){if(ag[v.id][c])ha+=ag[v.id][c].length;});customCalls[v.id].forEach(function(cc){if(ag[v.id][cc.name])ha+=ag[v.id][cc.name].length;});
+  var lk=la[v.id]>=3;
+  var ccCount=customCalls[v.id].length;
+  return '<tr><td><div class="it">'+lh(v.id)+'<div><div style="font-weight:600;">'+v.n+'</div><div style="font-size:11px;color:var(--wg);">'+v.f+'</div></div></div></td>'+
+  CLS.map(function(c){var b=bk[v.id+'_'+c];var opt=OPTIONAL_CALLS[c];if(opt&&!b)return '<td><span style="font-size:10px;color:var(--wg);">Optional</span></td>';return '<td>'+(b?'<span class="pl pc">'+b+'</span>':'<span class="pl pp">Pending</span>')+'</td>';}).join('')+
+  '<td>'+(ha>0?'<span class="pl pa" onclick="vAg(\''+v.id+'\')">'+ha+' file'+(ha>1?'s':'')+'</span>':'<span style="color:var(--wg);">&mdash;</span>')+(ccCount>0?'<div style="margin-top:3px;font-size:10px;color:var(--p);">+'+ccCount+' custom</div>':'')+'</td>'+
+  '<td><div style="display:flex;align-items:center;gap:8px;"><div class="pt"><div class="pf" style="width:'+pc+'%;"></div></div><span style="font-size:11px;color:var(--wg);">'+pc+'%</span></div></td>'+
+  '<td>'+(lk?'<span class="pl pk">Locked</span> <button class="btn bd bs" onclick="uP(\''+v.id+'\')">Unlock</button>':'<span style="font-family:monospace;font-size:12px;color:var(--wg);">'+pn[v.id]+'</span> <button class="btn bs" style="font-size:11px;padding:2px 6px;border:1px solid var(--bd);background:#fff;border-radius:6px;cursor:pointer;" onclick="rP(\''+v.id+'\')">&#x21bb;</button>')+'</td>'+
+  '<td><button class="btn bo bs" onclick="pvI(\''+v.id+'\')">Preview</button></td></tr>';
+}
+
+function rD(){
+  var bc=gBC();document.getElementById('d-bk').textContent=bc;document.getElementById('d-pc').textContent=Math.round(bc/36*100)+'%';
+  var ac=gAC();document.getElementById('d-ag').textContent=ac;document.getElementById('d-ags').textContent=ac>0?ac+' File'+(ac>1?'s':'')+' Received':'Awaiting Uploads';
+  document.getElementById('tb1').innerHTML=INV.map(iRow).join('');popVA();
+  CLS.forEach(function(c){
+    var cnt=INV.filter(function(v){return bk[v.id+'_'+c];}).length;
+    var el=document.getElementById('cs-'+c.replace(/\s/g,''));
+    if(el)el.textContent=cnt+' / 9';
+    var dEl=document.getElementById('csd-'+c.replace(/\s/g,''));
+    if(dEl){var names=callAssign[c].filter(function(p){return !p.system;}).map(function(p){return p.name;});dEl.textContent=names.length>0?names.join(', '):'Evercore-Led';}
+  });
+  renderTeamRows();
+  if(document.getElementById('ai-body'))generateAINextSteps();
+}
+
+function renderTeamRows(){
+  var container=document.getElementById('team-assign-rows');
+  container.innerHTML=CLS.map(function(c){
+    var people=callAssign[c]||[];
+    var chips=people.map(function(p,i){
+      var initials=p.name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().substring(0,2);
+      var sys=p.system?'tc-system':'';
+      return '<span class="team-chip '+sys+'" title="'+(p.email||p.title)+'">'+
+        '<span class="tc-avatar">'+initials+'</span>'+
+        '<span>'+p.name+'</span>'+
+        (p.system?'':'<button class="tc-remove" onclick="removeFromCall(\''+c+'\','+i+')">&times;</button>')+
+        '</span>';
+    }).join('');
+    return '<div class="team-call-row">'+
+      '<div class="team-call-label">'+c+'</div>'+
+      '<div class="team-call-chips">'+chips+
+      '<button class="add-person-btn" onclick="showAssignDropdown(\''+c+'\',this)">+ Assign</button>'+
+      '</div></div>';
+  }).join('');
+  renderTeamPanel();
+}
+
+function toggleTeamPanel(){
+  var panel=document.getElementById('team-panel');
+  if(panel.style.display==='none'){panel.style.display='block';renderTeamPanel();
+    setTimeout(function(){document.addEventListener('click',function closeTP(e){if(!panel.contains(e.target)&&!e.target.closest('[onclick*="toggleTeamPanel"]')){panel.style.display='none';document.removeEventListener('click',closeTP);}});},10);
+  }else{panel.style.display='none';}
+}
+
+function renderTeamPanel(){
+  var list=document.getElementById('team-panel-list');
+  if(!list)return;
+  if(CLIENT.team.length===0){list.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:var(--wg);">No Team Members</div>';return;}
+  list.innerHTML=CLIENT.team.map(function(p,i){
+    var initials=p.name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().substring(0,2);
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(108,63,160,0.06);">'+
+      '<span style="width:28px;height:28px;border-radius:50%;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;">'+initials+'</span>'+
+      '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--ch);">'+p.name+'</div><div style="font-size:11px;color:var(--wg);">'+p.title+(p.email?' · '+p.email:'')+'</div></div>'+
+      '<button class="btn bd bs" style="flex-shrink:0;font-size:10px;padding:3px 8px;" onclick="deleteTeamMember('+i+')">Remove</button>'+
+    '</div>';
+  }).join('');
+}
+
+function showAddTeamMember(){var panel=document.getElementById('team-panel');panel.style.display='block';document.getElementById('team-add-inline').style.display='block';document.getElementById('atm-name').focus();}
+function addTeamMember(){
+  var name=document.getElementById('atm-name').value.trim();
+  var title=document.getElementById('atm-title').value.trim();
+  var email=document.getElementById('atm-email').value.trim();
+  if(!name){toast('Enter A Name');return;}
+  CLIENT.team.push({name:name,title:title||'Team Member',email:email,role:'member'});
+  var sel=document.getElementById('pm');
+  if(sel){var opt=document.createElement('option');opt.value=name;opt.textContent=name;sel.appendChild(opt);}
+  document.getElementById('atm-name').value='';document.getElementById('atm-title').value='';document.getElementById('atm-email').value='';
+  document.getElementById('team-add-inline').style.display='none';
+  toast(name+' Added To Team');renderTeamPanel();rD();
+}
+
+function showAssignDropdown(callType,btn){
+  var existing=document.querySelector('.assign-dropdown');
+  if(existing)existing.remove();
+  var assigned=callAssign[callType].map(function(p){return p.name;});
+  var available=CLIENT.team.filter(function(p){return assigned.indexOf(p.name)===-1;});
+  if(available.length===0){toast('All Team Members Already Assigned');return;}
+  var dd=document.createElement('div');
+  dd.className='assign-dropdown';
+  dd.style.cssText='position:absolute;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:4px;z-index:100;min-width:200px;box-shadow:0 4px 12px rgba(0,0,0,0.1);';
+  dd.innerHTML=available.map(function(p){
+    return '<div style="padding:8px 12px;cursor:pointer;font-size:12px;border-radius:6px;display:flex;align-items:center;gap:8px;" onmouseover="this.style.background=\'var(--p50)\'" onmouseout="this.style.background=\'transparent\'" onclick="assignToCall(\''+callType+'\',\''+p.name+'\',\''+p.title+'\',\''+p.email+'\')">'+
+      '<span style="width:22px;height:22px;border-radius:50%;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;">'+p.name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().substring(0,2)+'</span>'+
+      '<div><div style="font-weight:600;">'+p.name+'</div><div style="font-size:11px;color:var(--wg);">'+p.title+'</div></div></div>';
+  }).join('')+'<div style="padding:6px 12px;border-top:1px solid var(--bd);margin-top:4px;"><button class="btn bo bs" style="width:100%;justify-content:center;" onclick="showAddTeamMember();this.closest(\'.assign-dropdown\').remove();">+ New Team Member</button></div>';
+  btn.style.position='relative';
+  btn.parentElement.style.position='relative';
+  btn.parentElement.appendChild(dd);
+  var rect=btn.getBoundingClientRect();
+  dd.style.position='absolute';dd.style.top=(btn.offsetTop+btn.offsetHeight+4)+'px';dd.style.left=btn.offsetLeft+'px';
+  setTimeout(function(){document.addEventListener('click',function closeDD(e){if(!dd.contains(e.target)&&e.target!==btn){dd.remove();document.removeEventListener('click',closeDD);}});},10);
+}
+
+function assignToCall(callType,name,title,email){
+  callAssign[callType].push({name:name,title:title,email:email});
+  var dd=document.querySelector('.assign-dropdown');if(dd)dd.remove();
+  toast(name+' Assigned To '+callType);rD();
+}
+
+function removeFromCall(callType,idx){
+  var person=callAssign[callType][idx];
+  callAssign[callType].splice(idx,1);
+  toast(person.name+' Removed From '+callType);rD();
+}
+
+function deleteTeamMember(idx){
+  var person=CLIENT.team[idx];
+  var name=person.name;
+  CLS.forEach(function(c){
+    callAssign[c]=callAssign[c].filter(function(p){return p.name!==name;});
+  });
+  CLIENT.team.splice(idx,1);
+  var sel=document.getElementById('pm');
+  if(sel){var opt=sel.querySelector('option[value="'+name+'"]');if(opt)opt.remove();}
+  toast(name+' Removed From Team');renderTeamPanel();rD();
+}
+
+var currentCallSum=null;
+function getCallDesc(c){var people=callAssign[c].filter(function(p){return !p.system;}).map(function(p){return p.name;});return people.length>0?'With '+people.join(', '):'Evercore-Led';}
+function showCallSummary(callType){
+  currentCallSum=callType;
+  document.getElementById('cs-title').textContent=callType+' — Summary';
+  document.getElementById('cs-sub').textContent=getCallDesc(callType);
+  var booked=[];var pending=[];
+  INV.forEach(function(v){
+    var key=v.id+'_'+callType;
+    if(bk[key])booked.push({inv:v,time:bk[key],agendas:ag[v.id][callType]||[]});
+    else pending.push({inv:v,agendas:ag[v.id][callType]||[]});
+  });
+  document.getElementById('css-booked').textContent=booked.length;
+  document.getElementById('css-pending').textContent=pending.length;
+  var agCnt=0;INV.forEach(function(v){agCnt+=(ag[v.id][callType]||[]).length;});
+  document.getElementById('css-agendas').textContent=agCnt;
+  var bhtml='';
+  if(booked.length>0){
+    bhtml='<table class="jt" style="table-layout:auto;"><thead><tr><th style="text-align:left;padding-left:14px;width:30%;">Investor</th><th style="text-align:left;width:45%;">Scheduled Time</th><th style="text-align:left;width:25%;">Agenda</th></tr></thead><tbody>';
+    booked.forEach(function(b){
+      bhtml+='<tr><td style="text-align:left;padding-left:14px;"><div class="it">'+lh(b.inv.id,28)+'<div><div style="font-weight:600;">'+b.inv.n+'</div><div style="font-size:11px;color:var(--wg);">'+b.inv.f+'</div></div></div></td>';
+      bhtml+='<td style="text-align:left;"><span class="pl pc">'+b.time+'</span></td>';
+      bhtml+='<td style="text-align:left;">'+(b.agendas.length>0?'<span class="pl pa" onclick="vAg(\''+b.inv.id+'\')">'+b.agendas.length+' File'+(b.agendas.length>1?'s':'')+'</span>':'<span style="color:var(--wg);">&mdash;</span>')+'</td></tr>';
+    });
+    bhtml+='</tbody></table>';
+  }else{bhtml='<div style="padding:20px;text-align:center;font-size:13px;color:var(--wg);">No Calls Scheduled Yet</div>';}
+  document.getElementById('cs-booked-list').innerHTML=bhtml;
+  var phtml='';
+  if(pending.length>0){
+    phtml='<table class="jt" style="table-layout:auto;"><thead><tr><th style="text-align:left;padding-left:14px;width:40%;">Investor</th><th style="text-align:left;width:30%;">Status</th><th style="text-align:left;width:30%;">Agenda</th></tr></thead><tbody>';
+    pending.forEach(function(p){
+      phtml+='<tr><td style="text-align:left;padding-left:14px;"><div class="it">'+lh(p.inv.id,28)+'<div><div style="font-weight:600;">'+p.inv.n+'</div><div style="font-size:11px;color:var(--wg);">'+p.inv.f+'</div></div></div></td>';
+      phtml+='<td style="text-align:left;"><span class="pl pp">Pending</span></td>';
+      phtml+='<td style="text-align:left;">'+(p.agendas.length>0?'<span class="pl pa" onclick="vAg(\''+p.inv.id+'\')">'+p.agendas.length+' File'+(p.agendas.length>1?'s':'')+'</span>':'<span style="color:var(--wg);">&mdash;</span>')+'</td></tr>';
+    });
+    phtml+='</tbody></table>';
+  }else{phtml='<div style="padding:20px;text-align:center;font-size:13px;color:var(--gn);font-weight:600;">All Investors Scheduled</div>';}
+  document.getElementById('cs-pending-list').innerHTML=phtml;
+  show('s-callsum');
+}
+
+function copyCallSummary(){
+  if(!currentCallSum)return;
+  var lines=['PROJECT JAVELIN — '+currentCallSum.toUpperCase()+' SUMMARY',''];
+  var booked=[];var pending=[];
+  INV.forEach(function(v){
+    var key=v.id+'_'+currentCallSum;
+    if(bk[key])booked.push(v.n+' — '+bk[key]);
+    else pending.push(v.n);
+  });
+  lines.push('SCHEDULED ('+booked.length+'/9):');
+  if(booked.length>0)booked.forEach(function(b){lines.push('  '+b);});
+  else lines.push('  None');
+  lines.push('');
+  lines.push('PENDING ('+pending.length+'/9):');
+  if(pending.length>0)pending.forEach(function(p){lines.push('  '+p);});
+  else lines.push('  All Investors Scheduled');
+  navigator.clipboard.writeText(lines.join('\n')).catch(function(){});
+  toast('Summary Copied To Clipboard');
+}
+function rP(id){pn[id]=String(100000+Math.floor(Math.random()*900000));toast('PIN rotated');rD();}
+function uP(id){la[id]=0;toast('Unlocked');rD();}
+
+var PERSON_COLORS=['#C6A4E8','#E8C86A','#6BC4A6','#E88B6A','#6AADE8','#E86AAD','#8BC86A','#C86A6A'];
+function getPersonColor(name){
+  var people=getAllTeamPeople();
+  var idx=people.indexOf(name);
+  if(idx===-1)idx=0;
+  return PERSON_COLORS[idx%PERSON_COLORS.length];
+}
+function getAllTeamPeople(){
+  var seen={};var people=[];
+  CLIENT.team.forEach(function(p){if(!seen[p.name]){seen[p.name]=true;people.push(p.name);}});
+  CLS.forEach(function(c){(callAssign[c]||[]).forEach(function(p){if(!p.system&&!seen[p.name]){seen[p.name]=true;people.push(p.name);}});});
+  return people;
+}
+function getUniqueTeamPeople(){return getAllTeamPeople();}
+
+function buildPaintDropdown(){
+  var sel=document.getElementById('pm');
+  if(!sel)return;
+  var cur=sel.value;
+  var people=getAllTeamPeople();
+  var opts='';
+  for(var i=0;i<people.length;i++){
+    opts+='<option value="'+people[i]+'">'+people[i]+'</option>';
+  }
+  sel.innerHTML=opts;
+  if(cur&&sel.querySelector('option[value="'+cur+'"]')){sel.value=cur;}
+}
+
+function buildLegend(){
+  var lg=document.getElementById('avail-legend');
+  var people=getUniqueTeamPeople();
+  lg.innerHTML=people.map(function(name){return '<span><span class="sw" style="background:'+getPersonColor(name)+';"></span> '+name+'</span>';}).join('')+
+    '<span><span class="sw" style="background:var(--iv);"></span> Booked</span>';
+}
+
+function rG(){
+  buildLegend();
+  var t=document.getElementById('w2');var h='<thead><tr><th class="tc">EST</th>';DYS.forEach(function(d){h+='<th>'+d+'</th>';});h+='</tr></thead><tbody>';
+  HRS.forEach(function(hr){
+    h+='<tr><td class="tl">'+fH(hr)+'</td>';
+    DYS.forEach(function(d,di){
+      var k=di+'_'+hr;var s=sl[k];var ib=s&&s.by;
+      var bg='';var dots='';
+      if(ib){bg='background:var(--iv);cursor:default;opacity:0.5;';}
+      else if(s&&s.people&&s.people.length>0){
+        if(s.people.length===1){bg='background:'+getPersonColor(s.people[0])+';';}
+        else{bg='background:linear-gradient(135deg,'+s.people.map(function(p){return getPersonColor(p);}).join(',')+');';}
+        dots=s.people.map(function(p){return '<span class="slot-dot" style="background:'+getPersonColor(p)+';border:1px solid rgba(0,0,0,0.15);"></span>';}).join('');
+      }
+      var cls='st'+(ib?' bk':'');
+      h+='<td class="'+cls+'" style="'+bg+'" data-k="'+k+'" onmousedown="sD(event,\''+k+'\')" onmouseenter="dO(event,\''+k+'\')" onmouseup="eD()">'+(dots?'<div class="slot-dots">'+dots+'</div>':'')+'</td>';
+    });h+='</tr>';
+  });
+  t.innerHTML=h+'</tbody>';
+}
+function fH(h){var p=h.split(':');var n=parseInt(p[0]);var ap=n>=12?'pm':'am';var h2=n>12?n-12:n===0?12:n;return h2+':'+(p[1]||'00')+ap;}
+function sD(e,k){e.preventDefault();dr=true;dm=document.getElementById('pm').value;dragBatch=[];
+  if(dm!=='erase'&&sl[k]&&!sl[k].by&&sl[k].people&&sl[k].people.indexOf(dm)!==-1&&sl[k].people.length===1){dm='_toggle_erase';}
+  aP(k,dm);}
+function dO(e,k){if(!dr)return;aP(k,dm);}
+function eD(){if(dr&&dragBatch&&dragBatch.length>0){pushUndo({type:'slotBatch',changes:dragBatch});}dr=false;dm=null;dragBatch=[];rG();}
+var dragBatch=[];
+document.addEventListener('mouseup',eD);
+function updateCell(k){
+  var cell=document.querySelector('td[data-k="'+k+'"]');
+  if(!cell)return;
+  var s=sl[k];
+  if(!s||!s.people||s.people.length===0){
+    cell.style.background='';cell.innerHTML='';cell.className='st';
+  }else{
+    if(s.people.length===1)cell.style.background=getPersonColor(s.people[0]);
+    else cell.style.background='linear-gradient(135deg,'+s.people.map(function(p){return getPersonColor(p);}).join(',')+')';
+    cell.innerHTML='<div class="slot-dots">'+s.people.map(function(p){return '<span class="slot-dot" style="background:'+getPersonColor(p)+';border:1px solid rgba(0,0,0,0.15);"></span>';}).join('')+'</div>';
+  }
+}
+function aP(k,m){
+  if(sl[k]&&sl[k].by)return;
+  var prev=sl[k]?sl[k].people.slice():null;
+  if(m==='erase'||m==='_toggle_erase'){
+    dragBatch.push({key:k,prev:prev});
+    delete sl[k];
+  }else{
+    if(!sl[k])sl[k]={people:[]};
+    var idx=sl[k].people.indexOf(m);
+    if(idx!==-1){
+      dragBatch.push({key:k,prev:prev});
+      sl[k].people.splice(idx,1);
+      if(sl[k].people.length===0)delete sl[k];
+    }else{
+      dragBatch.push({key:k,prev:prev});
+      sl[k].people.push(m);
+    }
+  }
+  updateCell(k);
+}
+function clearSlots(){if(Object.values(sl).some(function(s){return s.by;})){toast('Cannot Clear Booked Slots');return;}sl={};rG();toast('Cleared');}
+function loadSlots(){
+  var people=getUniqueTeamPeople();
+  if(people.length===0){toast('Assign Team Members First');return;}
+  for(var d=0;d<5;d++){for(var h=9;h<=17;h++){for(var mi=0;mi<2;mi++){if(h===17&&mi===1)continue;var k=d+'_'+h+':'+(mi===0?'00':'30');
+    if(Math.random()>0.35){
+      var ps=[];
+      var numP=Math.random()>0.5?1:Math.min(2,people.length);
+      var shuffled=people.slice().sort(function(){return Math.random()-0.5;});
+      for(var pi=0;pi<numP;pi++)ps.push(shuffled[pi]);
+      sl[k]={people:ps};
+    }
+  }}}rG();toast('Sample Loaded');
+}
+
+function pvI(id){
+  ci=id;var v=INV.find(function(i){return i.id===id;});
+  document.getElementById('pt2').textContent=v.n;document.getElementById('ps2').textContent='Enter Your 6-Digit PIN';document.getElementById('per').style.display='none';
+  var pi=document.getElementById('pis');pi.innerHTML='';
+  for(var i=0;i<6;i++){var inp=document.createElement('input');inp.type='text';inp.maxLength=1;inp.inputMode='numeric';inp.oninput=function(){if(this.value&&this.nextElementSibling)this.nextElementSibling.focus();};inp.onkeydown=function(e){if(e.key==='Backspace'&&!this.value&&this.previousElementSibling)this.previousElementSibling.focus();};pi.appendChild(inp);}
+  document.getElementById('psb').disabled=la[id]>=3;
+  if(la[id]>=3){document.getElementById('per').textContent='Link locked. Contact Evercore.';document.getElementById('per').style.display='block';}
+  show('s-pin');pi.querySelector('input').focus();
+}
+function submitP(){
+  if(!ci)return;var entered=Array.from(document.querySelectorAll('#pis input')).map(function(i){return i.value;}).join('');
+  if(entered===pn[ci]){la[ci]=0;showBk(ci);}
+  else{if(!la[ci])la[ci]=0;la[ci]++;var r=3-la[ci];
+    if(r<=0){document.getElementById('per').textContent='Link locked. Contact Evercore.';document.getElementById('psb').disabled=true;addN('<strong>'+INV.find(function(i){return i.id===ci;}).n+'</strong> — link locked');}
+    else document.getElementById('per').innerHTML='Incorrect PIN. <strong>'+r+'</strong> attempt'+(r>1?'s':'')+' remaining.';
+    document.getElementById('per').style.display='block';document.querySelectorAll('#pis input').forEach(function(i){i.value='';});document.querySelector('#pis input').focus();}
+}
+
+function showBk(id){
+  ci=id;var v=INV.find(function(i){return i.id===id;});
+  document.getElementById('bbg').innerHTML=lh(v.id,28)+' '+v.n;renderBk();show('s-book');
+}
+function renderBk(){
+  var v=INV.find(function(i){return i.id===ci;});var tz=parseInt(document.getElementById('btz').value);
+  var durOpts='<select class="tz" id="dur-SEL" style="padding:5px 8px;"><option value="30">30 Min</option><option value="60" selected>60 Min</option><option value="90">90 Min</option></select>';
+  var allCalls=CLS.concat(customCalls[v.id].map(function(cc){return cc.name;}));
+  var html=allCalls.map(function(c,idx){
+    var cid=c.replace(/\s/g,'');
+    var isCustom=idx>=CLS.length;
+    var cc=isCustom?customCalls[v.id][idx-CLS.length]:null;
+    var key=v.id+'_'+c;var ib=bk[key];
+    var isOpt=OPTIONAL_CALLS[c];
+    var hasAssign=callAssign[c]&&callAssign[c].length>0;
+    var ns=hasAssign&&callAssign[c].some(function(p){return !p.system;});
+    if(!ns)ns=isCustom;
+    var sh='';
+    if(!ib&&ns){
+      var requiredPeople=isCustom?[]:((callAssign[c]||[]).filter(function(p){return !p.system;}).map(function(p){return p.name;}));
+      var av=Object.entries(sl).filter(function(e){
+        if(!e[1]||e[1].by||!e[1].people)return false;
+        if(requiredPeople.length===0)return true;
+        return requiredPeople.some(function(rp){return e[1].people.indexOf(rp)!==-1;});
+      });
+      if(av.length>0){sh='<div style="margin-top:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:12px;color:var(--wg);">Duration:</span>'+durOpts.replace('dur-SEL','dur-'+cid)+'</div><div style="display:flex;flex-wrap:wrap;gap:5px;">'+av.slice(0,8).map(function(e){var p=e[0].split('_');return '<button class="btn bo bs" onclick="bkS(\''+v.id+'\',\''+c.replace(/'/g,"\\'")+'\',\''+e[0]+'\')">'+DYS[parseInt(p[0])]+' '+adjT(p[1],tz)+'</button>';}).join('')+(av.length>8?'<span style="font-size:11px;color:var(--wg);padding:4px;">+'+(av.length-8)+' more</span>':'')+'</div></div>';}
+      else sh='<div style="margin-top:10px;font-size:12px;color:var(--wg);">No Slots Available</div>';
+    }
+    if(!ib&&!ns&&!isCustom){sh='<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;"><input type="date" id="od-'+cid+'" class="tz" style="padding:6px 10px;"><select id="ot-'+cid+'" class="tz" style="padding:6px 10px;">'+HRS.map(function(h){return '<option value="'+h+'">'+fH(h)+'</option>';}).join('')+'</select>'+durOpts.replace('dur-SEL','dur-'+cid)+'<button class="btn bp bs" onclick="bkO(\''+v.id+'\',\''+c+'\')">Book</button></div>';}
+    if(!ib&&isCustom&&!av){sh='<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;"><input type="date" id="od-'+cid+'" class="tz" style="padding:6px 10px;"><select id="ot-'+cid+'" class="tz" style="padding:6px 10px;">'+HRS.map(function(h){return '<option value="'+h+'">'+fH(h)+'</option>';}).join('')+'</select>'+durOpts.replace('dur-SEL','dur-'+cid)+'<button class="btn bp bs" onclick="bkO(\''+v.id+'\',\''+c.replace(/'/g,"\\'")+'\')">Book</button></div>';}
+    if(!ag[v.id][c])ag[v.id][c]=[];
+    var agFiles=ag[v.id][c];
+    var agHtml='<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--bd);">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">'+
+      '<span style="font-size:12px;font-weight:600;color:var(--wg);">Agenda</span>'+
+      '<button class="btn bo bs" onclick="triggerUpload(\''+c.replace(/'/g,"\\'")+'\')"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="vertical-align:-1px;margin-right:3px;"><path d="M8 3v10"/><path d="M3 8h10"/></svg>Upload</button>'+
+      '</div>';
+    if(agFiles.length>0){agHtml+=agFiles.map(function(a,i){return rAI2(a,c,i);}).join('');}
+    else{agHtml+='<div style="font-size:12px;color:var(--wg);padding:4px 0;">No Agenda Uploaded</div>';}
+    agHtml+='</div>';
+    var callDescBk=isCustom?(cc.requestedWith?'Requested With '+cc.requestedWith:'Investor-Requested Call'):(getCallDesc(c)+(ns?' — Select From Grid':' — Select Any Time'));
+    var optLabel=isOpt?'<span style="font-size:10px;color:var(--wg);background:var(--iv);padding:2px 6px;border-radius:10px;margin-left:6px;">Optional</span>':'';
+    var customLabel=isCustom?'<span style="font-size:10px;color:var(--p);background:var(--p50);padding:2px 6px;border-radius:10px;margin-left:6px;">Requested</span>':'';
+    var teamChips=(!isCustom&&callAssign[c])?callAssign[c].filter(function(p){return !p.system;}).map(function(p){var ini=p.name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().substring(0,2);return '<span class="team-chip" style="font-size:10px;padding:2px 6px 2px 3px;margin:1px;"><span class="tc-avatar" style="width:16px;height:16px;font-size:7px;">'+ini+'</span>'+p.name+'</span>';}).join(''):'';
+    return '<div class="cci'+(ib?' bcd':'')+'"><div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;"><h4>'+c+optLabel+customLabel+'</h4><p style="margin-bottom:4px;">'+callDescBk+'</p>'+(teamChips?'<div style="margin-bottom:4px;">'+teamChips+'</div>':'')+(ib?'<div style="margin-top:8px;"><span class="pl pc">'+ib+'</span></div>':sh)+'</div>'+(ib?'<svg width="24" height="24" viewBox="0 0 20 20" fill="none" style="flex-shrink:0;margin-top:2px;"><circle cx="10" cy="10" r="9" stroke="var(--gn)" stroke-width="1.5"/><path d="M6 10l3 3 5-5" stroke="var(--gn)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+'</div>'+agHtml+'</div>';
+  }).join('');
+
+  html+='<div style="margin-top:16px;border:2px dashed var(--bd);border-radius:var(--r);padding:18px;text-align:center;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor=\'var(--pl)\';this.style.background=\'var(--p50)\'" onmouseout="this.style.borderColor=\'\';this.style.background=\'\'" onclick="showRequestCallForm()">'+
+    '<svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="var(--p)" stroke-width="1.5" style="vertical-align:-4px;margin-right:6px;"><path d="M8 3v10"/><path d="M3 8h10"/></svg>'+
+    '<span style="font-size:13px;font-weight:500;color:var(--p);">Request Additional Call</span>'+
+    '<div style="font-size:11px;color:var(--wg);margin-top:4px;">Suggest a topic and we will coordinate with the Javelin team</div>'+
+  '</div>';
+
+  html+='<div id="request-call-form" style="display:none;margin-top:12px;border:1px solid var(--bd);border-radius:var(--r);padding:16px;background:var(--iv);">'+
+    '<div style="font-size:13px;font-weight:600;margin-bottom:10px;">Request a New Call</div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">'+
+    '<div style="flex:1;min-width:160px;"><label style="font-size:11px;color:var(--wg);display:block;margin-bottom:4px;">Call Topic</label><input type="text" id="rc-topic" class="tz" style="width:100%;padding:6px 10px;" placeholder="e.g., Sensitive Topics"></div>'+
+    '<div style="min-width:140px;"><label style="font-size:11px;color:var(--wg);display:block;margin-bottom:4px;">Requested With</label><input type="text" id="rc-with" class="tz" style="width:100%;padding:6px 10px;" placeholder="e.g., CEO, CFO"></div>'+
+    '<button class="btn bp bs" onclick="submitCallRequest()">Submit Request</button>'+
+    '<button class="btn bo bs" onclick="document.getElementById(\'request-call-form\').style.display=\'none\'">Cancel</button>'+
+    '</div></div>';
+
+  document.getElementById('bcl').innerHTML=html;
+}
+function adjT(t,o){var p=t.split(':').map(Number);var n=p[0]+o;if(n<0)n+=24;if(n>=24)n-=24;var ap=n>=12?'PM':'AM';var h2=n>12?n-12:n===0?12:n;return h2+':'+(p[1]<10?'0'+p[1]:p[1])+' '+ap;}
+function getDur(c){var el=document.getElementById('dur-'+c.replace(/\s/g,''));return el?parseInt(el.value):60;}
+function addMin(timeStr,min){var p=timeStr.split(':').map(Number);var total=p[0]*60+p[1]+min;var h=Math.floor(total/60)%24;var m=total%60;return h+':'+(m<10?'0'+m:m);}
+function bkS(iid,c,sk){var p=sk.split('_');var dur=getDur(c);var startTime=p[1];var endTime=addMin(startTime,dur);bk[iid+'_'+c]=DYS[parseInt(p[0])]+'<br>'+fH(startTime)+' – '+fH(endTime);sl[sk].by=iid;pushUndo({type:'book',key:iid+'_'+c,slotKey:sk});toast(c+' Booked');renderBk();rD();}
+function bkO(iid,c){var cid=c.replace(/\s/g,'');var de=document.getElementById('od-'+cid);var te=document.getElementById('ot-'+cid);if(!de.value){toast('Select A Date');return;}var dur=getDur(c);var d=new Date(de.value+'T00:00:00');var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];var dayLabel=days[d.getDay()]+' '+(d.getMonth()+1)+'/'+d.getDate();var startTime=te.value;var endTime=addMin(startTime,dur);bk[iid+'_'+c]=dayLabel+'<br>'+fH(startTime)+' – '+fH(endTime);pushUndo({type:'book',key:iid+'_'+c,slotKey:null});toast(c+' Booked');renderBk();rD();}
+
+function triggerUpload(callType){uploadTarget=callType;document.getElementById('fi').click();}
+function showRequestCallForm(){var f=document.getElementById('request-call-form');if(f)f.style.display='block';}
+function submitCallRequest(){
+  if(!ci)return;
+  var topic=document.getElementById('rc-topic').value.trim();
+  var withPerson=document.getElementById('rc-with').value.trim();
+  if(!topic){toast('Enter A Call Topic');return;}
+  customCalls[ci].push({name:topic,requestedWith:withPerson||'TBD'});
+  if(!ag[ci][topic])ag[ci][topic]=[];
+  var inv=INV.find(function(i){return i.id===ci;});
+  addN('<strong>'+inv.n+'</strong> requested call: '+topic+(withPerson?' with '+withPerson:''));
+  toast('Call Request Submitted');
+  document.getElementById('rc-topic').value='';
+  document.getElementById('rc-with').value='';
+  document.getElementById('request-call-form').style.display='none';
+  renderBk();rD();
+}
+function handleUp(e){
+  if(!ci||!uploadTarget)return;var c=uploadTarget;
+  Array.from(e.target.files).forEach(function(f){ag[ci][c].push({n:f.name,s:fS(f.size),d:new Date().toLocaleDateString(),t:f.name.split('.').pop().toUpperCase()});addN('<strong>'+INV.find(function(i){return i.id===ci;}).n+'</strong> uploaded for '+c+': '+f.name);toast('Agenda Uploaded');});
+  renderBk();rD();e.target.value='';uploadTarget=null;
+}
+function rAI2(a,callType,i){return '<div class="ai2"><div class="aicon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 1v14h8V5l-4-4H4z"/><path d="M8 1v4h4"/></svg></div><div class="ainf"><div class="an">'+a.n+'</div><div class="am">'+a.t+' &middot; '+a.s+' &middot; '+a.d+'</div></div><button class="fr" onclick="rmA2(\''+callType+'\','+i+')">&times;</button></div>';}
+function rAI(a,i,rm){return '<div class="ai2"><div class="aicon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 1v14h8V5l-4-4H4z"/><path d="M8 1v4h4"/></svg></div><div class="ainf"><div class="an">'+a.n+'</div><div class="am">'+a.t+' &middot; '+a.s+' &middot; '+a.d+'</div></div></div>';}
+function rmA2(callType,i){if(!ci)return;ag[ci][callType].splice(i,1);renderBk();rD();}
+function rmA(i){}
+function vAg(id){var v=INV.find(function(i){return i.id===id;});document.getElementById('avt').textContent=v.n+' \u2014 Agendas';var html='';var allC=CLS.concat(customCalls[id].map(function(cc){return cc.name;}));allC.forEach(function(c){var files=ag[id][c]||[];if(files.length>0){html+='<div class="cd" style="margin-bottom:12px;"><div class="ch2"><h3>'+c+'</h3></div><div style="padding:14px;">'+files.map(function(a,i){return rAI(a,i,false);}).join('')+'</div></div>';}});if(!html)html='<div class="cd"><div style="padding:24px;text-align:center;font-size:13px;color:var(--wg);">No Agendas Uploaded Yet</div></div>';document.getElementById('avl').innerHTML=html;show('s-agv');}
+function fS(b){if(b<1024)return b+' B';if(b<1048576)return Math.round(b/1024)+' KB';return(b/1048576).toFixed(1)+' MB';}
+
+function sE(){document.getElementById('ei').innerHTML=INV.map(function(v){return '<option value="'+v.id+'">'+v.n+' \u2014 '+v.f+'</option>';}).join('');genEmail();}
+function genEmail(){
+  var id=document.getElementById('ei').value;var v=INV.find(function(i){return i.id===id;});
+  document.getElementById('esj').textContent='Project Javelin \u2014 Follow-Up Call Scheduling | '+v.n;
+  document.getElementById('ebd').textContent='Dear '+v.n+' Team,\n\nThank you for your continued engagement with the Javelin management team. Following our recent management presentations, we would like to schedule the following Follow-Up Calls:\n\n  1. Model Review (Evercore-Led)\n  2. Asset Review (with Javelin CEO)\n  3. LP Base Discussion (with Javelin IR)\n  4. Value-Add / Strategic Discussion (Evercore-Led)\n\nTo book your preferred times, please access the secure scheduling portal:\n\n  Link: javelin.evercore.com/book/'+v.id+'\n  PIN: '+pn[v.id]+'\n\nAll times are displayed in Eastern Time by default. You may switch to your preferred time zone on the scheduling page.\n\nShould you wish to share discussion materials or agenda items ahead of the calls, you may upload them directly through the portal for each specific call type. Our team will be notified immediately.\n\nPlease do not hesitate to reach out with any questions.\n\nBest regards,\n[Your Name]\nEvercore | Alternative Asset Management\n\n\u2014\nConfidential. Intended solely for '+v.n+'.';
+}
+function copyEm(){navigator.clipboard.writeText('Subject: '+document.getElementById('esj').textContent+'\n\n'+document.getElementById('ebd').textContent).catch(function(){});toast('Copied to clipboard');}
+function openOL(){var s=encodeURIComponent(document.getElementById('esj').textContent);var b=encodeURIComponent(document.getElementById('ebd').textContent);window.open('https://outlook.live.com/mail/0/deeplink/compose?subject='+s+'&body='+b);}
+
+function loadDemo(){
+  loadSlots();
+  Object.assign(bk,{'blueowl_Model Review':'Mon 3/31<br>10:00 – 11:00am','blueowl_Asset Review':'Tue 4/1<br>2:00 – 3:00pm','blackstone_Model Review':'Mon 3/31<br>11:00am – 12:00pm','hunterpoint_Model Review':'Wed 4/2<br>9:00 – 9:30am','hunterpoint_Asset Review':'Wed 4/2<br>3:00 – 4:00pm','hunterpoint_LP Base':'Thu 4/3<br>10:00 – 11:30am','hunterpoint_Value Add':'Thu 4/3<br>2:00 – 3:00pm','bonaccord_Model Review':'Tue 4/1<br>9:00 – 10:00am','wafra_Model Review':'Fri 4/4<br>10:00 – 10:30am','wafra_Asset Review':'Fri 4/4<br>2:00 – 3:00pm'});
+  ag['blueowl']['Model Review']=[{n:'Blue Owl - GP Stakes DD Framework.pdf',s:'2.4 MB',d:'3/27/2026',t:'PDF'}];
+  ag['blueowl']['Asset Review']=[{n:'Blue Owl - Asset-Level Questions.docx',s:'340 KB',d:'3/27/2026',t:'DOCX'}];
+  ag['hunterpoint']['Model Review']=[{n:'Hunterpoint - Preliminary Questions.docx',s:'186 KB',d:'3/26/2026',t:'DOCX'}];
+  ag['hunterpoint']['LP Base']=[{n:'Hunterpoint - Fee Analysis Model.xlsx',s:'1.1 MB',d:'3/26/2026',t:'XLSX'}];
+  addN('<strong>Blue Owl</strong> uploaded for Model Review: GP Stakes DD Framework.pdf');
+  addN('<strong>Hunterpoint</strong> uploaded for LP Base: Fee Analysis Model.xlsx');
+  customCalls['blueowl']=[{name:'Sensitive Topics',requestedWith:'CEO'}];
+  ag['blueowl']['Sensitive Topics']=[];
+  customCalls['hunterpoint']=[{name:'Management Co. Expenses',requestedWith:'CFO'}];
+  ag['hunterpoint']['Management Co. Expenses']=[];
+  addN('<strong>Blue Owl</strong> requested call: Sensitive Topics with CEO');
+  addN('<strong>Hunterpoint</strong> requested call: Management Co. Expenses with CFO');
+  rD();toast('Demo data loaded');
+}
+
+document.addEventListener('click',function(e){var np=document.getElementById('np');var nb=document.getElementById('nb');if(!np.contains(e.target)&&!nb.contains(e.target))np.classList.remove('show');});
+
+var lastAIItems=[];
+function generateAINextSteps(){
+  var items=[];
+  var availSlots=Object.keys(sl).length;
+  if(availSlots===0){items.push({priority:'urgent',title:'No Availability Set on Grid',description:'The Javelin team availability grid is empty. Set availability before investors can book Asset Review, LP Base, and Value Add calls.',investor:null,callType:null});}
+
+  INV.forEach(function(v){
+    var requiredCalls=CLS.filter(function(c){return !OPTIONAL_CALLS[c];});
+    var bookedCount=requiredCalls.filter(function(c){return bk[v.id+'_'+c];}).length;
+    if(bookedCount===0){
+      items.push({priority:'urgent',title:'No Calls Scheduled — '+v.n,description:'Send scheduling link and PIN to '+v.n+' ('+v.f+'). No calls have been booked yet.',investor:v.n,callType:null});
+    }else if(bookedCount<requiredCalls.length){
+      var pending=requiredCalls.filter(function(c){return !bk[v.id+'_'+c];});
+      items.push({priority:'warning',title:'Incomplete Schedule — '+v.n,description:v.n+' has '+bookedCount+'/'+requiredCalls.length+' required calls booked. Pending: '+pending.join(', ')+'.',investor:v.n,callType:null});
+    }
+    CLS.forEach(function(c){
+      if(bk[v.id+'_'+c]&&(ag[v.id][c]||[]).length===0){
+        items.push({priority:'warning',title:'Missing Agenda — '+v.n+' '+c,description:v.n+' has '+c+' scheduled ('+bk[v.id+'_'+c]+') but has not uploaded an agenda. Follow up to request materials.',investor:v.n,callType:c});
+      }
+    });
+    if(bookedCount===4){
+      var allAgendas=CLS.every(function(c){return (ag[v.id][c]||[]).length>0;});
+      items.push({priority:'good',title:'Fully Scheduled — '+v.n,description:v.n+' has all 4 calls booked.'+(allAgendas?' All agendas received.':' Some agendas still pending.'),investor:v.n,callType:null});
+    }
+  });
+
+  CLS.forEach(function(c){
+    var assigned=callAssign[c].filter(function(p){return !p.system;});
+    if(assigned.length===0&&c!=='Model Review'){
+      items.push({priority:'urgent',title:'No Javelin Team Assigned — '+c,description:'No team member is assigned to '+c+'. Assign someone in the Javelin Team section so investors can book.',investor:null,callType:c});
+    }
+  });
+
+  items.sort(function(a,b){var ord={urgent:0,warning:1,info:2,good:3};return (ord[a.priority]||2)-(ord[b.priority]||2);});
+  lastAIItems=items.slice(0,5);
+  renderAIItems(lastAIItems);
+}
+
+function renderAIItems(items){
+  var body=document.getElementById('ai-body');
+  if(!items||items.length===0){body.innerHTML='<div class="ai-loading">No Action Items — Everything Looks Good</div>';return;}
+  var iconMap={urgent:'&#9679;',warning:'&#9679;',info:'&#9679;',good:'&#10003;'};
+  body.innerHTML=items.map(function(item){
+    var iconCls=item.priority==='urgent'?'urgent':item.priority==='warning'?'warn':item.priority==='good'?'good':'info';
+    var actionBtn='';
+    if(item.investor&&item.priority!=='good'){
+      var inv=INV.find(function(v){return v.n===item.investor;});
+      if(inv){
+        if(item.title.indexOf('No Calls')!==-1||item.title.indexOf('Incomplete')!==-1){
+          actionBtn='<button class="btn bo bs" onclick="show(\'s-email\');document.getElementById(\'ei\').value=\''+inv.id+'\';genEmail();">Draft Email</button>';
+        }else if(item.title.indexOf('Agenda')!==-1){
+          actionBtn='<button class="btn bo bs" onclick="viewAs();document.getElementById(\'va-sel\').value=\''+inv.id+'\';viewAs();">View Booking</button>';
+        }
+      }
+    }
+    return '<div class="ai-item"><div class="ai-icon '+iconCls+'">'+iconMap[item.priority]+'</div><div class="ai-item-content"><div class="ai-title">'+item.title+'</div><div class="ai-desc">'+item.description+'</div></div>'+(actionBtn?'<div class="ai-item-action">'+actionBtn+'</div>':'')+'</div>';
+  }).join('');
+}
+
+function copyAINextSteps(){
+  if(lastAIItems.length===0){toast('Generate Next Steps First');return;}
+  var lines=['PROJECT JAVELIN — AI NEXT STEPS','Generated: '+new Date().toLocaleString(),''];
+  lastAIItems.forEach(function(item,i){
+    var tag=item.priority.toUpperCase();
+    lines.push((i+1)+'. ['+tag+'] '+item.title);
+    lines.push('   '+item.description);
+    lines.push('');
+  });
+  navigator.clipboard.writeText(lines.join('\n')).catch(function(){});
+  toast('Next Steps Copied');
+}
+
+rD();
+generateAINextSteps();
+</script>
+</body>
+</html>
