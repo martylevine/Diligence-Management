@@ -312,6 +312,12 @@ table.jt tr:last-child td{border-bottom:none;}
 <button class="btn bgl bs" onclick="loadSlots()">Load Sample</button>
 </div>
 </div>
+<div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--bd);border-radius:var(--r);padding:10px 16px;margin-bottom:8px;">
+<button class="btn bo bs" onclick="prevWeek()">&#8249; Prev Week</button>
+<div style="flex:1;text-align:center;font-weight:600;font-size:13px;color:var(--ch);" id="week-label"></div>
+<button class="btn bo bs" onclick="nextWeek()">Next Week &#8250;</button>
+<input type="date" id="week-jump" class="tz" style="padding:5px 8px;" onchange="jumpToWeek(this.value)" title="Jump to any date">
+</div>
 <div class="lg" id="avail-legend"></div>
 <div class="cd" style="margin-top:8px;"><div style="padding:10px;"><div class="w2w"><table class="w2t" id="w2"></table></div></div></div>
 </div>
@@ -420,7 +426,16 @@ var CLS=['Model Review','Asset Review','LP Base','Value Add'];
 var OPTIONAL_CALLS={'Value Add':true};
 var customCalls={};
 INV.forEach(function(v){customCalls[v.id]=[];});
-var DYS=['Mon 3/31','Tue 4/1','Wed 4/2','Thu 4/3','Fri 4/4'];
+function getMonday(d){var day=d.getDay();var diff=day===0?-6:1-day;var r=new Date(d.getTime());r.setDate(d.getDate()+diff);return r;}
+function getDateStr(ws,di){var d=new Date(ws.getTime());d.setDate(d.getDate()+di);var y=d.getFullYear();var m=String(d.getMonth()+1).padStart(2,'0');var dd=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+dd;}
+function getDYS(ws){var dn=['Mon','Tue','Wed','Thu','Fri'];var r=[];for(var i=0;i<5;i++){var d=new Date(ws.getTime());d.setDate(d.getDate()+i);r.push(dn[i]+' '+(d.getMonth()+1)+'/'+d.getDate());}return r;}
+function dateKeyToLabel(dateStr){var p=dateStr.split('-');var d=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];return dn[d.getDay()]+' '+(d.getMonth()+1)+'/'+d.getDate();}
+function getWeekLabel(ws){var end=new Date(ws.getTime());end.setDate(end.getDate()+4);var mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return mn[ws.getMonth()]+' '+ws.getDate()+' \u2013 '+mn[end.getMonth()]+' '+end.getDate()+', '+end.getFullYear();}
+function updateWeekLabel(){var el=document.getElementById('week-label');if(el)el.textContent=getWeekLabel(currentWeekStart);}
+function prevWeek(){var d=new Date(currentWeekStart.getTime());d.setDate(d.getDate()-7);currentWeekStart=d;rG();}
+function nextWeek(){var d=new Date(currentWeekStart.getTime());d.setDate(d.getDate()+7);currentWeekStart=d;rG();}
+function jumpToWeek(val){if(!val)return;var d=new Date(val+'T00:00:00');currentWeekStart=getMonday(d);document.getElementById('week-jump').value='';rG();}
+var currentWeekStart=getMonday(new Date(2026,2,31));
 var HRS=[];for(var h=9;h<=18;h++){HRS.push(h+':00');if(h<18)HRS.push(h+':30');}
 
 var CLIENT={
@@ -713,11 +728,14 @@ function buildLegend(){
 
 function rG(){
   buildLegend();
+  updateWeekLabel();
+  var DYS=getDYS(currentWeekStart);
   var t=document.getElementById('w2');var h='<thead><tr><th class="tc">EST</th>';DYS.forEach(function(d){h+='<th>'+d+'</th>';});h+='</tr></thead><tbody>';
   HRS.forEach(function(hr){
     h+='<tr><td class="tl">'+fH(hr)+'</td>';
     DYS.forEach(function(d,di){
-      var k=di+'_'+hr;var s=sl[k];var ib=s&&s.by;
+      var dateStr=getDateStr(currentWeekStart,di);
+      var k=dateStr+'_'+hr;var s=sl[k];var ib=s&&s.by;
       var bg='';var dots='';
       if(ib){bg='background:var(--iv);cursor:default;opacity:0.5;';}
       else if(s&&s.people&&s.people.length>0){
@@ -775,7 +793,7 @@ function clearSlots(){if(Object.values(sl).some(function(s){return s.by;})){toas
 function loadSlots(){
   var people=getUniqueTeamPeople();
   if(people.length===0){toast('Assign Team Members First');return;}
-  for(var d=0;d<5;d++){for(var h=9;h<=17;h++){for(var mi=0;mi<2;mi++){if(h===17&&mi===1)continue;var k=d+'_'+h+':'+(mi===0?'00':'30');
+  for(var d=0;d<5;d++){var ds=getDateStr(currentWeekStart,d);for(var h=9;h<=17;h++){for(var mi=0;mi<2;mi++){if(h===17&&mi===1)continue;var k=ds+'_'+h+':'+(mi===0?'00':'30');
     if(Math.random()>0.35){
       var ps=[];
       var numP=Math.random()>0.5?1:Math.min(2,people.length);
@@ -829,7 +847,7 @@ function renderBk(){
         if(requiredPeople.length===0)return true;
         return requiredPeople.some(function(rp){return e[1].people.indexOf(rp)!==-1;});
       });
-      if(av.length>0){sh='<div style="margin-top:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:12px;color:var(--wg);">Duration:</span>'+durOpts.replace('dur-SEL','dur-'+cid)+'</div><div style="display:flex;flex-wrap:wrap;gap:5px;">'+av.slice(0,8).map(function(e){var p=e[0].split('_');return '<button class="btn bo bs" onclick="bkS(\''+v.id+'\',\''+c.replace(/'/g,"\\'")+'\',\''+e[0]+'\')">'+DYS[parseInt(p[0])]+' '+adjT(p[1],tz)+'</button>';}).join('')+(av.length>8?'<span style="font-size:11px;color:var(--wg);padding:4px;">+'+(av.length-8)+' more</span>':'')+'</div></div>';}
+      if(av.length>0){sh='<div style="margin-top:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:12px;color:var(--wg);">Duration:</span>'+durOpts.replace('dur-SEL','dur-'+cid)+'</div><div style="display:flex;flex-wrap:wrap;gap:5px;">'+av.slice(0,8).map(function(e){var p=e[0].split('_');return '<button class="btn bo bs" onclick="bkS(\''+v.id+'\',\''+c.replace(/'/g,"\\'")+'\',\''+e[0]+'\')">'+dateKeyToLabel(p[0])+' '+adjT(p[1],tz)+'</button>';}).join('')+(av.length>8?'<span style="font-size:11px;color:var(--wg);padding:4px;">+'+(av.length-8)+' more</span>':'')+'</div></div>';}
       else sh='<div style="margin-top:10px;font-size:12px;color:var(--wg);">No Slots Available</div>';
     }
     if(!ib&&!ns&&!isCustom){sh='<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;"><input type="date" id="od-'+cid+'" class="tz" style="padding:6px 10px;"><select id="ot-'+cid+'" class="tz" style="padding:6px 10px;">'+HRS.map(function(h){return '<option value="'+h+'">'+fH(h)+'</option>';}).join('')+'</select>'+durOpts.replace('dur-SEL','dur-'+cid)+'<button class="btn bp bs" onclick="bkO(\''+v.id+'\',\''+c+'\')">Book</button></div>';}
@@ -871,7 +889,7 @@ function renderBk(){
 function adjT(t,o){var p=t.split(':').map(Number);var n=p[0]+o;if(n<0)n+=24;if(n>=24)n-=24;var ap=n>=12?'PM':'AM';var h2=n>12?n-12:n===0?12:n;return h2+':'+(p[1]<10?'0'+p[1]:p[1])+' '+ap;}
 function getDur(c){var el=document.getElementById('dur-'+c.replace(/\s/g,''));return el?parseInt(el.value):60;}
 function addMin(timeStr,min){var p=timeStr.split(':').map(Number);var total=p[0]*60+p[1]+min;var h=Math.floor(total/60)%24;var m=total%60;return h+':'+(m<10?'0'+m:m);}
-function bkS(iid,c,sk){var p=sk.split('_');var dur=getDur(c);var startTime=p[1];var endTime=addMin(startTime,dur);bk[iid+'_'+c]=DYS[parseInt(p[0])]+'<br>'+fH(startTime)+' – '+fH(endTime);sl[sk].by=iid;pushUndo({type:'book',key:iid+'_'+c,slotKey:sk});toast(c+' Booked');renderBk();rD();}
+function bkS(iid,c,sk){var p=sk.split('_');var dur=getDur(c);var startTime=p[1];var endTime=addMin(startTime,dur);bk[iid+'_'+c]=dateKeyToLabel(p[0])+'<br>'+fH(startTime)+' – '+fH(endTime);sl[sk].by=iid;pushUndo({type:'book',key:iid+'_'+c,slotKey:sk});toast(c+' Booked');renderBk();rD();}
 function bkO(iid,c){var cid=c.replace(/\s/g,'');var de=document.getElementById('od-'+cid);var te=document.getElementById('ot-'+cid);if(!de.value){toast('Select A Date');return;}var dur=getDur(c);var d=new Date(de.value+'T00:00:00');var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];var dayLabel=days[d.getDay()]+' '+(d.getMonth()+1)+'/'+d.getDate();var startTime=te.value;var endTime=addMin(startTime,dur);bk[iid+'_'+c]=dayLabel+'<br>'+fH(startTime)+' – '+fH(endTime);pushUndo({type:'book',key:iid+'_'+c,slotKey:null});toast(c+' Booked');renderBk();rD();}
 
 function triggerUpload(callType){uploadTarget=callType;document.getElementById('fi').click();}
